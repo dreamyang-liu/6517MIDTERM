@@ -65,7 +65,7 @@ class NeuroDataModule(pl.LightningDataModule):
         pass
 
     def train_dataloader(self):
-        return DataLoader(self.neuro_train, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.neuro_train, batch_size=self.batch_size, num_workers=10, shuffle=True)
 
     def val_dataloader(self):
         return DataLoader(self.neuro_val, batch_size=self.batch_size)
