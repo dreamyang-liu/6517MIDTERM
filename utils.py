@@ -1,9 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 
-FIG_PATH = 'figs'
-os.makedirs(FIG_PATH, exist_ok=True)
 
 def draw_mask(img, mask):
     """Draws mask on an image.
@@ -11,14 +8,15 @@ def draw_mask(img, mask):
     mask = mask.astype(np.uint8)
     img = np.copy(img)
     h, w = img.shape[:2]
+    div_factor = 255 / np.max(img)
     for i in range(h):
         for j in range(w):
             if mask[i, j] == 1:
-                img[i, j] = np.array([247, 86, 124], dtype=np.float32) / 255
+                img[i, j] = np.array([247, 86, 124], dtype=np.float32) / div_factor
             elif mask[i, j] == 2:
-                img[i, j] = np.array([153, 225, 217], dtype=np.float32) / 255
+                img[i, j] = np.array([153, 225, 217], dtype=np.float32) / div_factor
             elif mask[i, j] == 3:
-                img[i, j] = np.array([238, 227, 171], dtype=np.float32) / 255
+                img[i, j] = np.array([238, 227, 171], dtype=np.float32) / div_factor
     return img
 
 def draw_mask_comparsion(img, mask, mask_pred):

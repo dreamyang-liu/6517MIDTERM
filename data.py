@@ -1,11 +1,10 @@
-import os
 import numpy as np
 import pytorch_lightning as pl
-import torch
 from torch.utils.data import DataLoader, Dataset
-from PIL import Image
 from torchvision.transforms import ToTensor, Compose, RandomResizedCrop, Normalize, RandomHorizontalFlip, RandomVerticalFlip, RandomRotation
 from config import *
+from utils import draw_mask_comparsion
+import matplotlib.pyplot as plt
 
 def get_task_data_in_numpy():
     dim = DIM
@@ -65,7 +64,7 @@ class NeuroDataModule(pl.LightningDataModule):
         pass
 
     def train_dataloader(self):
-        return DataLoader(self.neuro_train, batch_size=self.batch_size, num_workers=10, shuffle=True)
+        return DataLoader(self.neuro_train, batch_size=self.batch_size, num_workers=6, shuffle=True)
 
     def val_dataloader(self):
         return DataLoader(self.neuro_val, batch_size=self.batch_size)
@@ -75,4 +74,19 @@ class NeuroDataModule(pl.LightningDataModule):
 
 
 if __name__ == "__main__":
-    pass
+    images, labels = get_task_data_in_numpy()
+    plt.figure(figsize=(25, 8))
+    for i, index in enumerate([0, 200, 800, 1000]):
+        img = images['train'][index]
+        label = labels['train'][index]
+        img, anno, anno_pred = draw_mask_comparsion(img, label, label)
+        # breakpoint()
+        plt.subplot(2, 6, i + 1)
+        plt.imshow(img)
+        plt.axis('off')
+        plt.title(f'Original Image {index}')
+        plt.subplot(2, 6, i + 1 + 6)
+        plt.imshow(anno_pred)
+        plt.axis('off')
+        plt.title(f'Ground Truth {index}')
+    plt.savefig('test.png')
