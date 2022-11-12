@@ -1,3 +1,4 @@
+# config.py
 import os
 CLASS_NUM = 4
 DIM = 2

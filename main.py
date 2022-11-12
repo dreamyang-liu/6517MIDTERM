@@ -34,6 +34,17 @@ def train(model, loss_type, encoder, encoder_weights, step_lr, gpu_id):
                                     )
     train_trainer.fit(model=model, datamodule=xd)
 
+def train_one(checkpoint_path):
+    xd = NeuroDataModule(32)
+    model = SegmentationModule.load_from_checkpoint(checkpoint_path)
+    test_trainer = pl.Trainer(accelerator='gpu', 
+                                    devices=1,
+                                    max_epochs=1, 
+                                    reload_dataloaders_every_n_epochs=2,
+                                    log_every_n_steps=10,
+                                    )
+    test_trainer.fit(model=model, datamodule=xd)
+
 def test(checkpoint_path):
     xd = NeuroDataModule(32)
     model = SegmentationModule.load_from_checkpoint(checkpoint_path)
@@ -76,9 +87,9 @@ def visualizeResult(checkpoint_path, save_path):
         y = y.reshape(256, 256).numpy()
         y_hat = y_hat.reshape(256, 256).numpy()
         img, anno, anno_pred = draw_mask_comparsion(x, y, y_hat)
-        pad_img = np.pad(img, [[3,3], [3,3], [0,0]], 'constant', constant_values=1.0)
-        pad_anno = np.pad(anno, [[3,3], [3,3], [0,0]], 'constant', constant_values=1.0)
-        pad_anno_pred = np.pad(anno_pred, [[3,3], [3,3], [0,0]], 'constant', constant_values=1.0)
+        pad_img = np.pad(img, [[1,1], [1,1], [0,0]], 'constant', constant_values=1.0)
+        pad_anno = np.pad(anno, [[1,1], [1,1], [0,0]], 'constant', constant_values=1.0)
+        pad_anno_pred = np.pad(anno_pred, [[1,1], [1,1], [0,0]], 'constant', constant_values=1.0)
         annotation_matrix.append(np.concatenate([pad_img, pad_anno, pad_anno_pred], axis=1))
     annotation_matrix = np.concatenate(annotation_matrix, axis=0)
     plt.figure(figsize=(len(sample_indexs) * 15, 3 * 15))
@@ -86,16 +97,18 @@ def visualizeResult(checkpoint_path, save_path):
     plt.axis('off')
     plt.savefig(f'combined_version{save_path}.png')
 if __name__ == '__main__':
-    model = 'linknet'
-    encoder = 'resnet50'
+    # training
+    model = 'unet'
+    encoder = 'resnet18'
     encoder_weights = 'imagenet'
     loss_type = 'ce'
     step_lr = None
-    gpu_id = 5
+    gpu_id = 1
     train(model, loss_type, encoder, encoder_weights, step_lr, gpu_id)
-    # for i in range(6):
-    #     print('=' * 20, f'version {i}', '=' * 20)
-    #     checkpoint_path = f'lightning_logs/version_{i}/checkpoints/epoch=99-step=1700.ckpt'
-    #     # validate(checkpoint_path)
-    #     # test(checkpoint_path)
-    #     visualizeResult(checkpoint_path, i)
+    # validation, testing and visualization
+    for i in [3]:
+        print('=' * 20, f'version {i}', '=' * 20)
+        checkpoint_path = f'lightning_logs/version_{i}/checkpoints/epoch=99-step=1700.ckpt'
+        validate(checkpoint_path)
+        test(checkpoint_path)
+        visualizeResult(checkpoint_path, i) 

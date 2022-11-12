@@ -1,9 +1,9 @@
+# data.py
 import numpy as np
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, Dataset
-from torchvision.transforms import ToTensor, Compose, RandomResizedCrop, Normalize, RandomHorizontalFlip, RandomVerticalFlip, RandomRotation
+from torchvision.transforms import ToTensor, Compose, RandomHorizontalFlip, RandomVerticalFlip, RandomRotation
 from config import *
-from utils import draw_mask_comparsion
 import matplotlib.pyplot as plt
 
 def get_task_data_in_numpy():
@@ -14,13 +14,12 @@ def get_task_data_in_numpy():
         'train': np.load(BASE_DIR +'classtrainimages.npy').astype(np.uint8),
         'val': np.load(BASE_DIR +'classvalimages.npy').astype(np.uint8),
         'test': np.load(BASE_DIR +'classtestimages.npy').astype(np.uint8)
-    }
+    } 
     labels = {
         'train': np.load(BASE_DIR +'classtrainlabels.npy').astype(np.uint8),
         'val': np.load(BASE_DIR +'classvallabels.npy').astype(np.uint8),
         'test': np.load(BASE_DIR +'classtestlabels.npy').astype(np.uint8)
     }
-    # breakpoint() # 410 24 45 2367
     return images, labels
 
 class NeuroDataset(Dataset):
@@ -28,21 +27,22 @@ class NeuroDataset(Dataset):
         images, labels = get_task_data_in_numpy()
         self.data = images[stage]
         self.labels = labels[stage]
-        self.concat = np.concatenate((self.data[:, np.newaxis, :, :], self.labels[:, np.newaxis, :, :]), axis=1)
+        # self.concat = np.concatenate((self.data[:, np.newaxis, :, :], self.labels[:, np.newaxis, :, :]), axis=1)
         self.transform = transform
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        concat = self.concat[idx].transpose(1,2,0)
+        # concat = self.concat[idx].transpose(1,2,0)
+        data = self.data[idx]
+        label = self.labels[idx]
         if self.transform:
-            concat = self.transform(concat)
-        return concat[0, np.newaxis, :, :], (concat[1, :, :] * 255).long()
+            data = self.transform(data)
+        return data, label
+        # return concat[0, np.newaxis, :, :], (concat[1, :, :] * 255).long()
 
 class NeuroDataModule(pl.LightningDataModule):
-    RESIZE_SHAPE = [224, 224]
-    RESIZE_CROP_SHAPE = [224, 224]
 
     def __init__(self, batch_size=32):
         super().__init__()
@@ -64,7 +64,7 @@ class NeuroDataModule(pl.LightningDataModule):
         pass
 
     def train_dataloader(self):
-        return DataLoader(self.neuro_train, batch_size=self.batch_size, num_workers=6, shuffle=True)
+        return DataLoader(self.neuro_train, batch_size=self.batch_size, num_workers=6, shuffle=False)
 
     def val_dataloader(self):
         return DataLoader(self.neuro_val, batch_size=self.batch_size)
@@ -75,18 +75,51 @@ class NeuroDataModule(pl.LightningDataModule):
 
 if __name__ == "__main__":
     images, labels = get_task_data_in_numpy()
-    plt.figure(figsize=(25, 8))
-    for i, index in enumerate([0, 200, 800, 1000]):
-        img = images['train'][index]
-        label = labels['train'][index]
-        img, anno, anno_pred = draw_mask_comparsion(img, label, label)
-        # breakpoint()
-        plt.subplot(2, 6, i + 1)
-        plt.imshow(img)
-        plt.axis('off')
-        plt.title(f'Original Image {index}')
-        plt.subplot(2, 6, i + 1 + 6)
-        plt.imshow(anno_pred)
-        plt.axis('off')
-        plt.title(f'Ground Truth {index}')
-    plt.savefig('test.png')
+    loader = NeuroDataModule(500).train_dataloader()
+    for i, (img, mask) in enumerate(loader):
+        if i == 0:
+            img0 = img[0, 0].numpy()
+            img1 = img[400, 0].numpy()
+            mask = mask[0].numpy()
+            plt.figure(figsize=(15, 5))
+            plt.subplot(1,4,1)
+            plt.imshow(images['train'][0], cmap='gray')
+            plt.title("Original Image")
+            plt.axis('off')
+            plt.subplot(1,4,2)
+            plt.imshow(img0, cmap='gray')
+            plt.title("After Augmentation")
+            plt.axis('off')
+
+            plt.subplot(1,4,3)
+            plt.imshow(images['train'][400], cmap='gray')
+            plt.title("Original Image")
+            plt.axis('off')
+            plt.subplot(1,4,4)
+            plt.imshow(img1, cmap='gray')
+            plt.title("After Augmentation")
+            plt.axis('off')
+
+
+            plt.savefig('asdasd.png')
+            break
+    # for key in images.keys():
+        # print(key, images[key].shape[0], np.unique(labels[key], return_counts=True))
+        # print(key, np.std(images[key]), np.mean(images[key]))
+        # plt.hist(images[key][0].reshape(256, -1), 256, [0, 256])
+        # plt.savefig(f'{key}_hist.png')
+    # plt.figure(figsize=(25, 8))
+    # for i, index in enumerate([0, 200, 800, 1000]):
+    #     img = images['train'][index]
+    #     label = labels['train'][index]
+    #     img, anno, anno_pred = draw_mask_comparsion(img, label, label)
+    #     # breakpoint()
+    #     plt.subplot(2, 6, i + 1)
+    #     plt.imshow(img)
+    #     plt.axis('off')
+    #     plt.title(f'Original Image {index}')
+    #     plt.subplot(2, 6, i + 1 + 6)
+    #     plt.imshow(anno_pred)
+    #     plt.axis('off')
+    #     plt.title(f'Ground Truth {index}')
+    # plt.savefig('test.png')

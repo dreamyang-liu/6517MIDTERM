@@ -1,3 +1,4 @@
+# utils.py
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -20,9 +21,9 @@ def draw_mask(img, mask):
     return img
 
 def draw_mask_comparsion(img, mask, mask_pred):
-    """Draws mask on a list of images.
+    """Draws mask on an image with ground truth and prediction.
     """
-    h, w= img.shape
+    h, w= img.shape[:2]
     img = np.repeat(img.reshape(h, w, 1), 3, axis=2)
     annotated = draw_mask(img, mask)
     annotated_pred = draw_mask(img, mask_pred)
